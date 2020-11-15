@@ -9,6 +9,7 @@ import pygit2
 from tkinter import messagebox
 from tkinter.ttk import *
 from github import Github
+from git import Repo
 
 class Application:
     """
@@ -32,12 +33,28 @@ class Application:
     
     def __ccrr(self):
         repo_name = self.cbox_repository.get()
+        if not (repo_name and not repo_name.isspace()):
+            messagebox.showerror('ERROR', 'Repository name field is empty!')
+            return
         clone = self.bl_clone_it.get()
-        repo = self.github_account.get_user().create_repo(name=repo_name, homepage='https://github.com')
-        if clone:
-            clone_path = self.ent_clone_to.get()
-            _ = pygit2.clone_repository(repo.git_url, clone_path)
-
+        try:
+            repo = self.github_account.get_user().create_repo(name=repo_name, homepage='https://github.com')
+            if clone:
+                clone_path = self.ent_clone_to.get()
+                clone_path = os.path.join(clone_path, repo_name)
+                cloned = pygit2.clone_repository(repo.git_url, clone_path)
+        except github.GithubException as e:
+            if e.status == 422 and clone:
+                ans = messagebox.askyesno('WARNING', f"Code: {e.status}, {e.data['message']}\n{e.data['errors'][0]['message']}\nClone?")
+                if ans:
+                    repo = self.github_account.get_user().get_repo(name=repo_name)
+                    clone_path = self.ent_clone_to.get()
+                    clone_path = os.path.join(clone_path, repo_name)
+                    cloned = pygit2.clone_repository(repo.git_url, clone_path)
+                    messagebox.showinfo('Info', f'Cloned to {clone_path}')
+            else:
+                messagebox.showerror('ERROR', f"Code: {e.status}, {e.data['message']}\n{e.data['errors'][0]['message']}")
+          
     def __drr(self):
         repo_name = self.cbox_repository.get()
         repo = self.github_account.get_user().get_repo(repo_name)
@@ -47,7 +64,7 @@ class Application:
         if self.github_account == None:
             messagebox.showerror('ERROR', "You're not authenticated!\nMenu > Auth > insert you auth token")
             return
-        if not self.bl_clone_it:
+        if self.bl_clone_it.get():
             if not (self.ent_clone_to.get() and not self.ent_clone_to.get().isspace()):
                 messagebox.showerror('ERROR', "Choose a directory to clone")
                 return
@@ -140,7 +157,6 @@ class Application:
         self.lbl_repos_name.grid(column=0, row=2, sticky='w', padx=5, pady=5)
 
         self.cbox_repository = Combobox(master=parent,width=47)
-        #self.cbox_repository.bind("<<ComboboxSelected>>", callbackFunc)
         self.cbox_repository.grid(column=0, row=3, sticky='w', padx=5, pady=5)
 
         self.layout_h = tk.Frame(master=parent)
