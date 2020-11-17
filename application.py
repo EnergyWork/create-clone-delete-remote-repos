@@ -9,7 +9,7 @@ import pygit2
 from tkinter import messagebox
 from tkinter.ttk import *
 from github import Github
-from git import Repo
+# from git import Repo
 
 class Application:
     """
@@ -77,8 +77,6 @@ class Application:
             self.root.destroy()
 
     def __get_reposities(self):
-        #*"https://api.github.com/users/$GHUSER/repos?access_token=$GITHUB_API_TOKEN"
-        #response = requests.get('https://api.github.com/user/repos', headers=headers)
         repos_list = []
         for repo in self.github_account.get_user().get_repos():
             repos_list.append(repo.name)
@@ -109,7 +107,7 @@ class Application:
         try:
             self.github_account = Github(login_or_token=userlogin)
             u = self.github_account.get_user().login
-            messagebox.showinfo('Authenticated', f'Hi {u}') # BadCredentialsException: 401 {"message": "Bad credentials", "documentation_url": "https://docs.github.com/rest"}
+            messagebox.showinfo('Authenticated', f'Hi {u}')
             self.lbl_who['text'] = u
             self.__get_reposities()
             window.destroy()
